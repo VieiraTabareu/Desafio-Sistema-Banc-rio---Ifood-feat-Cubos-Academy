@@ -49,6 +49,8 @@ const criarConta = (req, res) => {
 
 const atualizarConta = (req, res) => {
     const { numeroConta } = req.params
+    const { nome, cpf, data_nascimento, telefone, email, senha } = req.body
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numeroConta))
 
     if (isNaN(numeroConta)) {
         return res.status(404).json("O numero da conta não é válido")
@@ -56,97 +58,81 @@ const atualizarConta = (req, res) => {
     if (contas.length == 0) {
         return res.status(400).json("Ainda nao existem contas cadastradas")
     }
-
-    const contaExiste = contas.find((conta) => numeroConta == conta.numeroConta)
-
-    if (!contaExiste) {
+    if (!contaOrigem) {
         return res.status(400).json("O numero da conta nao existe")
     }
 
-    const { nome, cpf, data_nascimento, telefone, email, senha } = req.body
-
-    if (!nome) { return res.status(400).json("O nome precisa ser informado") } {
-        if (!cpf) { return res.status(400).json("O CPF precisa ser informado") }
-        if (!data_nascimento) { return res.status(400).json("A data de nascimento precisa ser informada") }
-        if (!telefone) { return res.status(400).json("O telefone precisa ser informado") }
-        if (!email) { return res.status(400).json("O email precisa ser informado") }
-        if (!senha) { return res.status(400).json("A senha precisa ser informada") }
-    }
-
-    const contaParaAtualizar = contas.find((conta) => conta.numeroConta === Number(numeroConta))
-
-    const contaAtualizada = { numeroConta: contaParaAtualizar.numeroConta, nome, cpf, data_nascimento, telefone, email, senha, saldo: contaParaAtualizar.saldo }
+    if (!nome) { return res.status(400).json("O nome precisa ser informado") }
+    else { contaOrigem.nome = nome }
+    if (!cpf) { return res.status(400).json("O CPF precisa ser informado") }
+    else { contaOrigem.cpf = cpf }
+    if (!data_nascimento) { return res.status(400).json("A data de nascimento precisa ser informada") }
+    else { contaOrigem.data_nascimento = data_nascimento }
+    if (!telefone) { return res.status(400).json("O telefone precisa ser informado") }
+    else { contaOrigem.telefone = telefone }
+    if (!email) { return res.status(400).json("O email precisa ser informado") }
+    else { contaOrigem.email = email }
+    if (!senha) { return res.status(400).json("A senha precisa ser informada") }
+    else { contaOrigem.senha = senha }
 
     for (let conta of contas) {
-        if (conta !== contaParaAtualizar && conta.cpf === cpf) {
+        if (conta !== contaOrigem && conta.cpf === cpf) {
             return res.status(400).json("O CPF informado já existe cadastrado!")
         }
-        if (conta !== contaParaAtualizar && conta.email === email) {
+        if (conta !== contaOrigem && conta.email === email) {
             return res.status(400).json("O e-mail informado já existe cadastrado!")
         }
     }
-
-    const posicaoContaAntiga = contas.findIndex((conta) => conta.numeroConta === Number(numeroConta))
-    contas.splice(posicaoContaAntiga, 1, contaAtualizada)
 
     res.status(201).json()
 }
 
 const deletarConta = (req, res) => {
     const { numeroConta } = req.params
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numeroConta))
+    const posicaoConta = contas.findIndex((conta) => conta.numeroConta === Number(numeroConta))
 
     if (isNaN(numeroConta)) {
         return res.status(404).json("O numero da conta não é válido")
     }
+    if (!contaOrigem) {
+        return res.status(400).json("O numero da conta nao existe")
+    }
     if (contas.length == 0) {
         return res.status(400).json("Ainda nao existem contas cadastradas")
     }
-
-    const contaExiste = contas.map((conta) => numeroConta === conta.numeroConta)
-    if (!contaExiste) {
-        return res.status(400).json("O numero da conta nao existe")
-    }
-
-    const posicaoConta = contas.findIndex((conta) => conta.numeroConta === Number(numeroConta))
-
-    if (contas[posicaoConta].saldo == 0) {
-        res.status(403).json("A conta só pode ser removida se o saldo for zero!")
+    if (contas[posicaoConta].saldo > 0) {
+        return res.status(403).json("A conta só pode ser removida se o saldo for zero!")
     }
 
     contas.splice(posicaoConta, 1)
     res.status(204).json()
 
-
 }
 
 const depositar = (req, res) => {
     const { numero_conta, valor } = req.body
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numero_conta))
+    const posicaoConta = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta))
 
     if (!numero_conta) {
         res.status(400).json("O numero da conta precisa ser informado")
     }
-    if (!valor) {
-        res.status(400).json("O valor precisa ser informado")
-    }
-
     if (isNaN(numero_conta)) {
         res.status(400).json("O numero da conta informado nao é valido")
+    }
+    if (!contaOrigem) {
+        res.status(404).json("A conta nao foi encontrada ou não existe")
+    }
+    if (!valor) {
+        res.status(400).json("O valor precisa ser informado")
     }
     if (valor <= 0 || isNaN(valor)) {
         res.status(400).json("O valor informado nao é valido")
     }
 
-    const contaExiste = contas.map((conta) => numero_conta === conta.numeroConta)
-    if (!contaExiste) {
-        res.status(404).json("A conta nao foi encontrada ou não existe")
-    }
-
-    const contaParaAtualizar = contas.find((conta) => conta.numeroConta === Number(numero_conta))
-
-    const contaAtualizada = { numeroConta: contaParaAtualizar.numeroConta, nome: contaParaAtualizar.nome, cpf: contaParaAtualizar.cpf, data_nascimento: contaParaAtualizar.data_nascimento, telefone: contaParaAtualizar.telefone, email: contaParaAtualizar.email, senha: contaParaAtualizar.senha, saldo: contaParaAtualizar.saldo + valor }
-
-    const posicaoContaAntiga = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta))
-    contas.splice(posicaoContaAntiga, 1, contaAtualizada)
+    const saldo = contaOrigem.saldo + Number(valor)
+    contas[posicaoConta].saldo = saldo
 
     res.status(204).json()
 }
@@ -154,32 +140,35 @@ const depositar = (req, res) => {
 const sacar = (req, res) => {
     const { numero_conta, valor, senha } = req.body
 
-    const contaOrigem = contas.find((conta) => numero_conta === conta.numeroConta)
-    const posicaoContaOrigem = contas.findIndex((conta) => numero_conta === conta.numeroConta)
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numero_conta))
+    const posicaoContaOrigem = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta))
 
     if (!numero_conta) {
-        res.status(400).json("O numero da conta precisa ser informado")
+        return res.status(400).json("O numero da conta precisa ser informado")
     }
     if (!valor) {
-        res.status(400).json("O valor precisa ser informado")
+        return res.status(400).json("O valor precisa ser informado")
     }
     if (!senha) {
-        res.status(400).json("A senha precisa ser informada")
+        return res.status(400).json("A senha precisa ser informada")
     }
     if (isNaN(numero_conta)) {
-        res.status(400).json("O numero da conta informado nao é valido")
+        return res.status(400).json("O numero da conta informado nao é valido")
     }
     if (valor <= 0 || isNaN(valor)) {
-        res.status(400).json("O valor informado nao é valido")
+        return res.status(400).json("O valor informado nao é valido")
     }
     if (!contaOrigem) {
-        res.status(404).json("A conta não foi encontrada ou não existe")
+        return res.status(404).json("A conta não foi encontrada ou não existe")
     }
     if (contaOrigem.senha !== senha) {
-        res.status(403).json("A senha está incorreta")
+        return res.status(403).json("A senha está incorreta")
+    }
+    if (contaOrigem.saldo < valor) {
+        return res.status(400).json("Saldo insuficiente")
     }
 
-    const saldoAposSaque = contaOrigem.saldo - valor
+    const saldoAposSaque = contaOrigem.saldo - Number(valor)
     contas[posicaoContaOrigem].saldo = saldoAposSaque
 
     res.status(201).json()
@@ -188,11 +177,11 @@ const sacar = (req, res) => {
 const transferir = (req, res) => {
     const { origem, destino, senha, valor } = req.body
 
-    const contaOrigem = contas.find((conta) => origem === conta.numeroConta)
-    const posicaoContaOrigem = contas.findIndex((conta => origem === conta.numeroConta))
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(origem))
+    const posicaoContaOrigem = contas.findIndex((conta) => conta.numeroConta === Number(origem))
 
-    const posicaoContaDestino = contas.findIndex((conta => destino === conta.numeroConta))
-    const contaDestino = contas.find((conta) => destino === conta.numeroConta)
+    const posicaoContaDestino = contas.findIndex((conta) => conta.numeroConta === Number(destino))
+    const contaDestino = contas.find((conta) => conta.numeroConta === Number(destino))
 
     const saldoOrigem = contaOrigem.saldo
     const saldoDestino = contaDestino.saldo
@@ -214,8 +203,8 @@ const transferir = (req, res) => {
         return res.status(401).json("O saldo é insuficiente")
     }
 
-    const saldoAposTransferir = saldoOrigem - valor
-    const saldoAposReceber = saldoDestino + valor
+    const saldoAposTransferir = saldoOrigem - Number(valor)
+    const saldoAposReceber = saldoDestino + Number(valor)
 
     contas[posicaoContaOrigem].saldo = saldoAposTransferir
     contas[posicaoContaDestino].saldo = saldoAposReceber
@@ -227,19 +216,18 @@ const saldo = (req, res) => {
     const { numero_conta, senha } = req.query
 
     const contaOrigem = contas.find((conta) => Number(numero_conta) === conta.numeroConta)
-    console.log(contaOrigem)
     const senhaValida = contaOrigem.senha
-    
-    if (!numero_conta){
+
+    if (!numero_conta) {
         return res.status(400).json("O numero da conta nao foi informado")
     }
-    if (!contaOrigem){
+    if (!contaOrigem) {
         return res.status(404).json("Conta bancária não encontrada!")
     }
-    if (!senha){
-        return res.status(400).json("A senha nao foi informada")
+    if (!senha) {
+        return res.status(400).json("A senha não foi informada")
     }
-    if (senha !== senhaValida){
+    if (senha !== senhaValida) {
         return res.status(403).json("A senha esta incorreta")
     }
 
