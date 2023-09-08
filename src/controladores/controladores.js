@@ -1,6 +1,8 @@
 const { query } = require("express")
-const { contas } = require("../bancodedados")
-let { numeroConta } = require("../bancodedados")
+const { contas, depositos, saques, transferencias } = require("../bancodedados")
+let { numeroConta, numeroDepositos, numeroSaques, numeroTransferencias } = require("../bancodedados")
+const { format } = require("date-fns")
+const data = format(new Date(), "yyyy-MM-dd' 'hh:mm:ss")
 
 const validarSenha = (req, res, next) => {
     const { senha_banco } = req.query
@@ -134,7 +136,11 @@ const depositar = (req, res) => {
     const saldo = contaOrigem.saldo + Number(valor)
     contas[posicaoConta].saldo = saldo
 
-    res.status(204).json()
+    depositos.push({
+        idTransacao: numeroDepositos++, data, contaDepositada: numero_conta, valor
+    })
+
+    res.status(201).json()
 }
 
 const sacar = (req, res) => {
@@ -170,6 +176,10 @@ const sacar = (req, res) => {
 
     const saldoAposSaque = contaOrigem.saldo - Number(valor)
     contas[posicaoContaOrigem].saldo = saldoAposSaque
+
+    saques.push({
+        id: numeroSaques++, data, contaSacada: numero_conta, valor
+    })
 
     res.status(201).json()
 }
@@ -209,7 +219,11 @@ const transferir = (req, res) => {
     contas[posicaoContaOrigem].saldo = saldoAposTransferir
     contas[posicaoContaDestino].saldo = saldoAposReceber
 
-    res.status(201).json()
+    transferencias.push({
+        id: numeroTransferencias++, data, contaSacada: contaOrigem.numeroConta, contaDestino: contaDestino.numeroConta, valor
+    })
+
+    res.status(201).json(transferencias)
 }
 
 const saldo = (req, res) => {
@@ -234,4 +248,32 @@ const saldo = (req, res) => {
     res.status(200).json(`Saldo: ${contaOrigem.saldo}`)
 }
 
-module.exports = { validarSenha, listarContas, criarConta, atualizarConta, deletarConta, depositar, sacar, transferir, saldo }
+const extrato = (req, res) => {
+    const { numero_conta, senha } = req.query
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numero_conta))
+
+    if (!numero_conta) {
+        return res.status(400).json("A conta não foi informada")
+    }
+    if (!senha) {
+        return res.status(403).json("A senha não foi informada")
+    }
+    if (!contaOrigem) {
+        return res.status(404).json("A conta não foi encontrada")
+    }
+    if (senha != contaOrigem.senha) {
+        return res.status(402).json("A senha está incorreta")
+    }
+
+    const extratoDepositos = depositos.filter((deposito) => deposito.contaDepositada === numero_conta)
+    const extratoSaques = saques.filter((saque) => saque.contaSacada === numero_conta)
+    const transferenciasRecebidas = transferencias.filter((transferencia) => transferencia.contaDestino === Number(numero_conta))
+    const transferenciasEnviadas = transferencias.filter((transferencia) => transferencia.contaSacada === Number(numero_conta))
+
+    console.log(transferenciasRecebidas)
+    console.log(transferenciasEnviadas)
+
+    res.status(200).json({Depositos: extratoDepositos , Saques: extratoSaques , TransferenciasRecebidas: transferenciasRecebidas , TransferenciasEnviadas: transferenciasEnviadas} )
+}
+
+module.exports = { validarSenha, listarContas, criarConta, atualizarConta, deletarConta, depositar, sacar, transferir, saldo, extrato }

@@ -1,5 +1,8 @@
 module.exports = {
     numeroConta: 1,
+    numeroDepositos: 1,
+    numeroSaques: 1,
+    numeroTransferencias: 1,
     banco: {
         nome: 'Cubos Bank',
         numero: '123',
