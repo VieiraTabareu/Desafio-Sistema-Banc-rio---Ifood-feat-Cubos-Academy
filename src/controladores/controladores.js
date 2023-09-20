@@ -8,7 +8,7 @@ const validarSenha = (req, res, next) => {
     const { senha_banco } = req.query
 
     if (senha_banco) {
-        if (senha_banco === "cubos123Bank") {
+        if (senha_banco === "Cubos123Bank") {
             res.status(200)
             next()
         }
@@ -54,15 +54,9 @@ const atualizarConta = (req, res) => {
     const { nome, cpf, data_nascimento, telefone, email, senha } = req.body
     const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numeroConta))
 
-    if (isNaN(numeroConta)) {
-        return res.status(404).json("O numero da conta não é válido")
-    }
-    if (contas.length == 0) {
-        return res.status(400).json("Ainda nao existem contas cadastradas")
-    }
-    if (!contaOrigem) {
-        return res.status(400).json("O numero da conta nao existe")
-    }
+    if (isNaN(numeroConta)) { return res.status(404).json("O numero da conta não é válido") }
+    if (contas.length == 0) { return res.status(400).json("Ainda nao existem contas cadastradas") }
+    if (!contaOrigem) { return res.status(400).json("O numero da conta nao existe") }
 
     if (!nome) { return res.status(400).json("O nome precisa ser informado") }
     else { contaOrigem.nome = nome }
@@ -94,18 +88,10 @@ const deletarConta = (req, res) => {
     const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numeroConta))
     const posicaoConta = contas.findIndex((conta) => conta.numeroConta === Number(numeroConta))
 
-    if (isNaN(numeroConta)) {
-        return res.status(404).json("O numero da conta não é válido")
-    }
-    if (!contaOrigem) {
-        return res.status(400).json("O numero da conta nao existe")
-    }
-    if (contas.length == 0) {
-        return res.status(400).json("Ainda nao existem contas cadastradas")
-    }
-    if (contas[posicaoConta].saldo > 0) {
-        return res.status(403).json("A conta só pode ser removida se o saldo for zero!")
-    }
+    if (isNaN(numeroConta)) { return res.status(404).json("O numero da conta não é válido") }
+    if (!contaOrigem) { return res.status(400).json("O numero da conta nao existe") }
+    if (contas.length == 0) { return res.status(400).json("Ainda nao existem contas cadastradas") }
+    if (contas[posicaoConta].saldo > 0) { return res.status(403).json("A conta só pode ser removida se o saldo for zero!") }
 
     contas.splice(posicaoConta, 1)
     res.status(204).json()
@@ -117,21 +103,11 @@ const depositar = (req, res) => {
     const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numero_conta))
     const posicaoConta = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta))
 
-    if (!numero_conta) {
-        res.status(400).json("O numero da conta precisa ser informado")
-    }
-    if (isNaN(numero_conta)) {
-        res.status(400).json("O numero da conta informado nao é valido")
-    }
-    if (!contaOrigem) {
-        res.status(404).json("A conta nao foi encontrada ou não existe")
-    }
-    if (!valor) {
-        res.status(400).json("O valor precisa ser informado")
-    }
-    if (valor <= 0 || isNaN(valor)) {
-        res.status(400).json("O valor informado nao é valido")
-    }
+    if (!numero_conta) { res.status(400).json("O numero da conta precisa ser informado") }
+    if (isNaN(numero_conta)) { res.status(400).json("O numero da conta informado nao é valido") }
+    if (!contaOrigem) { res.status(404).json("A conta nao foi encontrada ou não existe") }
+    if (!Number(valor)) { res.status(400).json("O valor precisa ser informado") }
+    if (Number(valor) <= 0 || isNaN(valor)) { res.status(400).json("O valor informado nao é valido") }
 
     const saldo = contaOrigem.saldo + Number(valor)
     contas[posicaoConta].saldo = saldo
@@ -149,30 +125,14 @@ const sacar = (req, res) => {
     const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numero_conta))
     const posicaoContaOrigem = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta))
 
-    if (!numero_conta) {
-        return res.status(400).json("O numero da conta precisa ser informado")
-    }
-    if (!valor) {
-        return res.status(400).json("O valor precisa ser informado")
-    }
-    if (!senha) {
-        return res.status(400).json("A senha precisa ser informada")
-    }
-    if (isNaN(numero_conta)) {
-        return res.status(400).json("O numero da conta informado nao é valido")
-    }
-    if (valor <= 0 || isNaN(valor)) {
-        return res.status(400).json("O valor informado nao é valido")
-    }
-    if (!contaOrigem) {
-        return res.status(404).json("A conta não foi encontrada ou não existe")
-    }
-    if (contaOrigem.senha !== senha) {
-        return res.status(403).json("A senha está incorreta")
-    }
-    if (contaOrigem.saldo < valor) {
-        return res.status(400).json("Saldo insuficiente")
-    }
+    if (!numero_conta) { return res.status(400).json("O numero da conta precisa ser informado") }
+    if (!valor) { return res.status(400).json("O valor precisa ser informado") }
+    if (!senha) { return res.status(400).json("A senha precisa ser informada") }
+    if (isNaN(numero_conta)) { return res.status(400).json("O numero da conta informado nao é valido") }
+    if (valor <= 0 || isNaN(valor)) { return res.status(400).json("O valor informado nao é valido") }
+    if (!contaOrigem) { return res.status(404).json("A conta não foi encontrada ou não existe") }
+    if (contaOrigem.senha !== senha) { return res.status(403).json("A senha está incorreta") }
+    if (contaOrigem.saldo < valor) { return res.status(400).json("Saldo insuficiente") }
 
     const saldoAposSaque = contaOrigem.saldo - Number(valor)
     contas[posicaoContaOrigem].saldo = saldoAposSaque
@@ -185,33 +145,31 @@ const sacar = (req, res) => {
 }
 
 const transferir = (req, res) => {
-    const { origem, destino, senha, valor } = req.body
+    const { numero_conta_origem, numero_conta_destino, senha, valor } = req.body
 
-    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(origem))
-    const posicaoContaOrigem = contas.findIndex((conta) => conta.numeroConta === Number(origem))
-
-    const posicaoContaDestino = contas.findIndex((conta) => conta.numeroConta === Number(destino))
-    const contaDestino = contas.find((conta) => conta.numeroConta === Number(destino))
-
-    const saldoOrigem = contaOrigem.saldo
-    const saldoDestino = contaDestino.saldo
-
-    const senhaValida = contaOrigem.senha
-
-    if (!origem) { return res.status(400).json("A conta origem não foi informada") }
-    if (isNaN(origem)) { return res.status(400).json("A conta origem não é válida") }
-    if (!destino) { return res.status(400).json("A conta destino não foi informada") }
-    if (isNaN(destino)) { return res.status(400).json("A conta destino não é válida") }
+    if (!numero_conta_origem) { return res.status(400).json("A conta origem não foi informada") }
+    if (isNaN(numero_conta_origem)) { return res.status(400).json("A conta origem não é válida") }
+    if (!numero_conta_destino) { return res.status(400).json("A conta destino não foi informada") }
+    if (isNaN(numero_conta_destino)) { return res.status(400).json("A conta destino não é válida") }
     if (!senha) { return res.status(400).json("A senha não foi informada") }
     if (!valor) { return res.status(400).json("Informe um valor") }
     if (isNaN(valor) || valor <= 0) { return res.status(400).json("O valor informado não é valido") }
 
-    if (senhaValida !== senha) {
-        return res.status(403).json("A conta informada é invalida")
-    }
-    if (saldoOrigem <= 0) {
-        return res.status(401).json("O saldo é insuficiente")
-    }
+    const contaOrigem = contas.find((conta) => conta.numeroConta === Number(numero_conta_origem))
+    if (!contaOrigem) { return res.status(404).json("A conta origem nao existe") }
+    const posicaoContaOrigem = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta_origem))
+
+    const contaDestino = contas.find((conta) => conta.numeroConta === Number(numero_conta_destino))
+    if (!contaDestino) { return res.status(404).json("A conta destino nao existe") }
+    const posicaoContaDestino = contas.findIndex((conta) => conta.numeroConta === Number(numero_conta_destino))
+
+    const saldoOrigem = contaOrigem.saldo
+    const saldoDestino = contaDestino.saldo
+    const senhaValida = contaOrigem.senha
+
+    if (senhaValida !== senha) { return res.status(403).json("A senha informada é invalida") }
+    if (saldoOrigem < valor) { return res.status(400).json("O saldo é insuficiente") }
+    if (saldoOrigem <= 0) { return res.status(401).json("O saldo é insuficiente") }
 
     const saldoAposTransferir = saldoOrigem - Number(valor)
     const saldoAposReceber = saldoDestino + Number(valor)
@@ -223,29 +181,21 @@ const transferir = (req, res) => {
         id: numeroTransferencias++, data, contaSacada: contaOrigem.numeroConta, contaDestino: contaDestino.numeroConta, valor
     })
 
-    res.status(201).json(transferencias)
+    res.status(201).json()
 }
 
 const saldo = (req, res) => {
     const { numero_conta, senha } = req.query
 
     const contaOrigem = contas.find((conta) => Number(numero_conta) === conta.numeroConta)
+    if (!numero_conta) { return res.status(400).json("O numero da conta nao foi informado") }
+    if (!contaOrigem) { return res.status(404).json("Conta bancária não encontrada!") }
+    if (!senha) { return res.status(400).json("A senha não foi informada") }
+
     const senhaValida = contaOrigem.senha
+    if (senha !== senhaValida) { return res.status(403).json("A senha esta incorreta") }
 
-    if (!numero_conta) {
-        return res.status(400).json("O numero da conta nao foi informado")
-    }
-    if (!contaOrigem) {
-        return res.status(404).json("Conta bancária não encontrada!")
-    }
-    if (!senha) {
-        return res.status(400).json("A senha não foi informada")
-    }
-    if (senha !== senhaValida) {
-        return res.status(403).json("A senha esta incorreta")
-    }
-
-    res.status(200).json(`Saldo: ${contaOrigem.saldo}`)
+    res.status(200).json(`Saldo: RS ${contaOrigem.saldo},00`)
 }
 
 const extrato = (req, res) => {
@@ -273,7 +223,7 @@ const extrato = (req, res) => {
     console.log(transferenciasRecebidas)
     console.log(transferenciasEnviadas)
 
-    res.status(200).json({Depositos: extratoDepositos , Saques: extratoSaques , TransferenciasRecebidas: transferenciasRecebidas , TransferenciasEnviadas: transferenciasEnviadas} )
+    res.status(200).json({ Depositos: extratoDepositos, Saques: extratoSaques, TransferenciasRecebidas: transferenciasRecebidas, TransferenciasEnviadas: transferenciasEnviadas })
 }
 
 module.exports = { validarSenha, listarContas, criarConta, atualizarConta, deletarConta, depositar, sacar, transferir, saldo, extrato }
