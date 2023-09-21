@@ -1,5 +1,5 @@
 const { query } = require("express")
-const { contas, depositos, saques, transferencias } = require("../bancodedados")
+let { contas, depositos, saques, transferencias } = require("../bancodedados")
 let { numeroConta, numeroDepositos, numeroSaques, numeroTransferencias } = require("../bancodedados")
 const { format } = require("date-fns")
 const data = format(new Date(), "yyyy-MM-dd' 'hh:mm:ss")
@@ -36,17 +36,17 @@ const criarConta = (req, res) => {
     if (!senha) { return res.status(400).json("A senha precisa ser informada") }
 
     for (let conta of contas) {
-        if (conta.cpf === cpf || conta.email === email) {
+        if (conta.usuario.cpf === cpf || conta.usuario.email === email) {
             return res.status(400).json("Já existe uma conta com o cpf ou e-mail informado!")
         }
     }
 
-    const conta = {
-        numeroConta: numeroConta++, nome, cpf, data_nascimento, telefone, email, senha, saldo: 0
+    let conta = {
+        numeroConta: numeroConta++, saldo: 0, usuario: { nome, cpf, data_nascimento, telefone, email, senha }
     }
 
     contas.push(conta)
-    res.status(201).json()
+    return res.status(201).json()
 }
 
 const atualizarConta = (req, res) => {
@@ -59,28 +59,28 @@ const atualizarConta = (req, res) => {
     if (!contaOrigem) { return res.status(400).json("O numero da conta nao existe") }
 
     if (!nome) { return res.status(400).json("O nome precisa ser informado") }
-    else { contaOrigem.nome = nome }
+    else { contaOrigem.usuario.nome = nome }
     if (!cpf) { return res.status(400).json("O CPF precisa ser informado") }
-    else { contaOrigem.cpf = cpf }
+    else { contaOrigem.usuario.cpf = cpf }
     if (!data_nascimento) { return res.status(400).json("A data de nascimento precisa ser informada") }
-    else { contaOrigem.data_nascimento = data_nascimento }
+    else { contaOrigem.usuario.data_nascimento = data_nascimento }
     if (!telefone) { return res.status(400).json("O telefone precisa ser informado") }
-    else { contaOrigem.telefone = telefone }
+    else { contaOrigem.usuario.telefone = telefone }
     if (!email) { return res.status(400).json("O email precisa ser informado") }
-    else { contaOrigem.email = email }
+    else { contaOrigem.usuario.email = email }
     if (!senha) { return res.status(400).json("A senha precisa ser informada") }
-    else { contaOrigem.senha = senha }
+    else { contaOrigem.usuario.senha = senha }
 
     for (let conta of contas) {
-        if (conta !== contaOrigem && conta.cpf === cpf) {
+        if (conta.numeroConta != contaOrigem.numeroConta && contaOrigem.usuario.cpf === cpf) {
             return res.status(400).json("O CPF informado já existe cadastrado!")
         }
-        if (conta !== contaOrigem && conta.email === email) {
+        if (conta !== contaOrigem && contaOrigem.usuario.email === email) {
             return res.status(400).json("O e-mail informado já existe cadastrado!")
         }
     }
 
-    res.status(201).json()
+    res.status(204).json()
 }
 
 const deletarConta = (req, res) => {
@@ -131,7 +131,7 @@ const sacar = (req, res) => {
     if (isNaN(numero_conta)) { return res.status(400).json("O numero da conta informado nao é valido") }
     if (valor <= 0 || isNaN(valor)) { return res.status(400).json("O valor informado nao é valido") }
     if (!contaOrigem) { return res.status(404).json("A conta não foi encontrada ou não existe") }
-    if (contaOrigem.senha !== senha) { return res.status(403).json("A senha está incorreta") }
+    if (contaOrigem.usuario.senha !== senha) { return res.status(403).json("A senha está incorreta") }
     if (contaOrigem.saldo < valor) { return res.status(400).json("Saldo insuficiente") }
 
     const saldoAposSaque = contaOrigem.saldo - Number(valor)
@@ -165,7 +165,7 @@ const transferir = (req, res) => {
 
     const saldoOrigem = contaOrigem.saldo
     const saldoDestino = contaDestino.saldo
-    const senhaValida = contaOrigem.senha
+    const senhaValida = contaOrigem.usuario.senha
 
     if (senhaValida !== senha) { return res.status(403).json("A senha informada é invalida") }
     if (saldoOrigem < valor) { return res.status(400).json("O saldo é insuficiente") }
@@ -192,10 +192,11 @@ const saldo = (req, res) => {
     if (!contaOrigem) { return res.status(404).json("Conta bancária não encontrada!") }
     if (!senha) { return res.status(400).json("A senha não foi informada") }
 
-    const senhaValida = contaOrigem.senha
+    const senhaValida = contaOrigem.usuario.senha
     if (senha !== senhaValida) { return res.status(403).json("A senha esta incorreta") }
 
-    res.status(200).json(`Saldo: RS ${contaOrigem.saldo},00`)
+    const saldo = {saldo: contaOrigem.saldo}
+    res.status(200).json(saldo)
 }
 
 const extrato = (req, res) => {
@@ -211,7 +212,7 @@ const extrato = (req, res) => {
     if (!contaOrigem) {
         return res.status(404).json("A conta não foi encontrada")
     }
-    if (senha != contaOrigem.senha) {
+    if (senha != contaOrigem.usuario.senha) {
         return res.status(402).json("A senha está incorreta")
     }
 
@@ -220,10 +221,7 @@ const extrato = (req, res) => {
     const transferenciasRecebidas = transferencias.filter((transferencia) => transferencia.contaDestino === Number(numero_conta))
     const transferenciasEnviadas = transferencias.filter((transferencia) => transferencia.contaSacada === Number(numero_conta))
 
-    console.log(transferenciasRecebidas)
-    console.log(transferenciasEnviadas)
-
-    res.status(200).json({ Depositos: extratoDepositos, Saques: extratoSaques, TransferenciasRecebidas: transferenciasRecebidas, TransferenciasEnviadas: transferenciasEnviadas })
+    res.status(200).json({ depositos: extratoDepositos, saques: extratoSaques, transferenciasEnviadas: transferenciasEnviadas, transferenciasRecebidas: transferenciasRecebidas })
 }
 
 module.exports = { validarSenha, listarContas, criarConta, atualizarConta, deletarConta, depositar, sacar, transferir, saldo, extrato }
